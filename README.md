@@ -3,6 +3,9 @@
 A lightweight http server that runs in an isolate
 
    ```dart
+   import 'dart:io';
+   import 'package:isohttpd/isohttpd.dart';
+
    Future<HttpResponse> handler(HttpRequest request, IsoLogger log) async {
      var response = jsonResponse(request, {"response": "ok"});
      return response;
