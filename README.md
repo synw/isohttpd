@@ -13,11 +13,11 @@ A lightweight http server that runs in an isolate
    void main() async {
      // set routes
      IsoRoute onGet = IsoRoute(path: "*", handler: handler);
-     List<IsoRoute> routes = <IsoRoute>[onGet];
+     var routes = <IsoRoute>[onGet];
      final router = IsoRouter(routes);
 
      // run
-     IsoHttpdRunner iso = IsoHttpdRunner(host: "localhost", router: router);
+     var iso = IsoHttpdRunner(host: "localhost", router: router);
      await iso.run();
 
      // listen to logs
