@@ -7,8 +7,7 @@ A lightweight http server that runs in an isolate
    import 'package:isohttpd/isohttpd.dart';
 
    Future<HttpResponse> handler(HttpRequest request, IsoLogger log) async {
-     var response = jsonResponse(request, {"response": "ok"});
-     return response;
+     return jsonResponse(request, {"response": "ok"});
    }
 
    void main() async {
@@ -19,7 +18,7 @@ A lightweight http server that runs in an isolate
 
      // run
      IsoHttpdRunner iso = IsoHttpdRunner(host: "localhost", router: router);
-     await iso.run(verbose: true);
+     await iso.run();
 
      // listen to logs
      iso.logs.listen((dynamic data) => print("$data"));
