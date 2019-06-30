@@ -1,10 +1,10 @@
 import 'dart:async';
-import 'dart:isolate';
 import 'package:meta/meta.dart';
 import 'package:iso/iso.dart';
 import 'server.dart';
 import 'models/router.dart';
 import 'models/types.dart';
+import 'models/request_log.dart';
 
 class IsoHttpdRunner {
   IsoHttpdRunner(
@@ -21,25 +21,41 @@ class IsoHttpdRunner {
   final bool verbose;
 
   Iso iso;
-  final StreamController<dynamic> __logsController =
-      StreamController<dynamic>();
+  final StreamController<dynamic> _logsController = StreamController<dynamic>();
   final StreamController<dynamic> _requestLogsController =
       StreamController<dynamic>();
+  StreamSubscription<dynamic> _dataOutSub;
 
-  Stream<dynamic> get logs => __logsController.stream;
+  Stream<dynamic> get logs => _logsController.stream;
   Stream<dynamic> get requestLogs => _requestLogsController.stream;
 
-  static void _run(SendPort chan) async {
-    //print("R > run runner run");
+  static void _run(IsoRunner iso) async {
+    iso.receive();
+    //iso.send("R IS > Running");
+
+    // get config from args
     IsoHttpd server;
-    Completer _completer = Completer<Null>();
     String _host;
     int _port;
     IsoRouter _router;
     String _apiKey;
     bool _startServer;
     bool _verbose;
+    dynamic data = iso.args[0] as Map<String, dynamic>;
+    _host = data["host"] as String;
+    _port = data["port"] as int;
+    _router = data["router"] as IsoRouter;
+    _startServer = data["start_server"] as bool;
+    _verbose = data["verbose"] as bool;
+    if (data.containsKey("api_key") == true)
+      _apiKey = data["api_key"] as String;
+
+    //print("R > config: $data");
     //print('R > on data in');
+    //dataIn.listen((dynamic data) {
+    //  print("R > DATA IN $data");
+    //});
+    /*
     Iso.onDataIn(chan, (dynamic data) {
       //print("R > runner data in: $data");
       if (data is Map) {
@@ -69,15 +85,15 @@ class IsoHttpdRunner {
             break;
         }
       }
-    });
-    //print('R > wait runner completed');
-    await _completer.future;
+    });*/
+    //iso.send("R IS > test");
+    // init server instance
     server = IsoHttpd(
         host: _host,
         port: _port,
         router: _router,
         apiKey: _apiKey,
-        chan: chan,
+        chan: iso.chanOut,
         verbose: _verbose);
     //print('R > init server');
     server.init();
@@ -91,6 +107,9 @@ class IsoHttpdRunner {
       await server.start();
       //chan.send("RCHAN > server started");
     }
+    //print("R print > Runner is running");
+    //iso.send("R IS > Runner is running");
+    //iso.receive();
   }
 
   void start() => iso.send(HttpdCommand.start);
@@ -101,11 +120,21 @@ class IsoHttpdRunner {
 
   Future<void> run({bool startServer = true, bool verbose = false}) async {
     assert(host != null);
-    iso =
-        Iso(_run, onDataOut: (dynamic data) => __logsController.sink.add(data));
-    iso.run();
-    await iso.onReady;
-    //print("RUN > iso ready");
+    assert(router != null);
+    iso = Iso(_run, onDataOut: (dynamic data) => null);
+
+    // logs relay
+    _dataOutSub = iso.dataOut.listen((dynamic data) {
+      if (data is ServerRequestLog) {
+        //print("RUN > REQUEST LOG DATA $data");
+        _requestLogsController.sink.add(data);
+      } else {
+        //print("RUN > LOG DATA $data");
+        _logsController.sink.add(data);
+      }
+    });
+
+    // configure the run function parameters
     Map<String, dynamic> conf = <String, dynamic>{
       "host": host,
       "port": 8084,
@@ -114,8 +143,10 @@ class IsoHttpdRunner {
       "start_server": startServer,
       "verbose": verbose,
     };
-    //print('RUN : sending conf');
-    iso.send(conf);
+    // run
+    iso.run(<dynamic>[conf]);
+
+    //await iso.onReady;
   }
 
   void kill() {
@@ -123,6 +154,7 @@ class IsoHttpdRunner {
   }
 
   void dispose() {
-    __logsController.close();
+    _dataOutSub.cancel();
+    _logsController.close();
   }
 }

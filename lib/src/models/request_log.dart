@@ -3,16 +3,16 @@ import 'dart:io';
 import 'dart:isolate';
 import 'package:meta/meta.dart';
 
-class IsoResponseLogger {
-  IsoResponseLogger(
+class IsoRequestLogger {
+  IsoRequestLogger(
       {@required this.logChannel, this.chan, this.verbose = false});
 
-  final StreamController<ServerResponseLog> logChannel;
+  final StreamController<ServerRequestLog> logChannel;
   final SendPort chan;
   final bool verbose;
 
   void success(String msg, HttpRequest request) {
-    var logItem = ServerResponseLog(
+    var logItem = ServerRequestLog(
         logClass: LogMessageClass.success,
         statusCode: request.response.statusCode,
         requestUrl: request.uri.path,
@@ -21,7 +21,7 @@ class IsoResponseLogger {
   }
 
   void warning(String msg, HttpRequest request) {
-    var logItem = ServerResponseLog(
+    var logItem = ServerRequestLog(
         logClass: LogMessageClass.warning,
         statusCode: request.response.statusCode,
         requestUrl: request.uri.path,
@@ -30,7 +30,7 @@ class IsoResponseLogger {
   }
 
   void error(String msg, HttpRequest request) {
-    var logItem = ServerResponseLog(
+    var logItem = ServerRequestLog(
         logClass: LogMessageClass.error,
         statusCode: request.response.statusCode,
         requestUrl: request.uri.path,
@@ -38,8 +38,8 @@ class IsoResponseLogger {
     _processMsg(logItem);
   }
 
-  void _processMsg(ServerResponseLog logItem) {
-    if (verbose) print(logItem);
+  void _processMsg(ServerRequestLog logItem) {
+    //if (verbose) print(logItem);
     logChannel.sink.add(logItem);
     if (chan != null) chan.send(logItem);
   }
@@ -47,8 +47,8 @@ class IsoResponseLogger {
 
 enum LogMessageClass { success, error, warning }
 
-class ServerResponseLog {
-  ServerResponseLog(
+class ServerRequestLog {
+  ServerRequestLog(
       {@required this.requestUrl,
       @required this.message,
       @required this.statusCode,
@@ -79,7 +79,7 @@ class ServerResponseLog {
       default:
     }
     if (requestUrl == "") requestUrl = "/";
-    String msg = " $date $statusCode $msgClass $requestUrl $message";
+    String msg = "$date $statusCode $msgClass $requestUrl $message";
     return msg;
   }
 }

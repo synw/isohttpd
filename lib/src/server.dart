@@ -7,7 +7,7 @@ import 'package:isohttpd/src/models/router.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 import 'package:body_parser/body_parser.dart';
-import 'models/response_log.dart';
+import 'models/request_log.dart';
 import 'models/log.dart';
 
 class IsoHttpd {
@@ -22,12 +22,12 @@ class IsoHttpd {
     switch (chan != null) {
       case true:
         log = IsoLogger(logChannel: _logsChannel, chan: chan, verbose: verbose);
-        serverLog = IsoResponseLogger(
+        serverLog = IsoRequestLogger(
             logChannel: _requestsLogChannel, chan: chan, verbose: verbose);
         break;
       default:
         log = IsoLogger(logChannel: _logsChannel);
-        serverLog = IsoResponseLogger(logChannel: _requestsLogChannel);
+        serverLog = IsoRequestLogger(logChannel: _requestsLogChannel);
     }
   }
 
@@ -39,20 +39,20 @@ class IsoHttpd {
   final bool verbose;
 
   IsoLogger log;
-  IsoResponseLogger serverLog;
+  IsoRequestLogger serverLog;
   Stream<HttpRequest> _incomingRequests;
   bool _isRunning = false;
   bool _isInitialized = false;
   final Completer<Null> _onStartedCompleter = Completer<Null>();
   final Completer<Null> _readyCompleter = Completer<Null>();
-  final StreamController<ServerResponseLog> _requestsLogChannel =
-      StreamController<ServerResponseLog>.broadcast();
+  final StreamController<ServerRequestLog> _requestsLogChannel =
+      StreamController<ServerRequestLog>.broadcast();
   final StreamController<String> _logsChannel =
       StreamController<String>.broadcast();
   StreamSubscription _incomingRequestsSub;
 
   Stream<String> get logs => _logsChannel.stream;
-  Stream<ServerResponseLog> get requestLogs => _requestsLogChannel.stream;
+  Stream<ServerRequestLog> get requestLogs => _requestsLogChannel.stream;
 
   Future<Null> get onReady => _readyCompleter.future;
   Future<Null> get onStarted => _onStartedCompleter.future;
@@ -123,8 +123,7 @@ class IsoHttpd {
           return;
         }
       }
-      // find a handler
-      IsoRequestHandler handler;
+      // check method
       bool isMethodAuthorized;
       switch (request.method) {
         case 'POST':
@@ -136,29 +135,41 @@ class IsoHttpd {
         default:
           isMethodAuthorized = false;
       }
-      if (isMethodAuthorized) {
-        for (final route in router.routes) {
-          if ((route.path == request.uri.path || route.path == "*") &&
-              route.handler != null) {
-            handler = route.handler;
-            break;
-          }
-        }
-      } else {
+      if (!isMethodAuthorized) {
         request.response.statusCode = HttpStatus.methodNotAllowed;
         request.response.close();
         String msg = "Method not allowed ${request.method}";
         serverLog.warning(msg, request);
         return;
       }
-      // run the handler
+      // find a handler
+      IsoRequestHandler handler;
+      IsoRequestHandler defaultHandler;
+      bool found = false;
+      for (final route in router.routes) {
+        if (route.path == request.uri.path) {
+          handler = route.handler;
+          found = true;
+          break;
+        } else if (route.path == "*" && defaultHandler == null) {
+          defaultHandler = route.handler;
+        }
+      }
+      if (!found) {
+        handler = defaultHandler;
+      }
+
+      // check if a route has been found
       if (handler == null) {
-        String msg = "Handler not found";
+        String msg = "Not found";
         _notFound(request, msg);
         return;
       }
+      // run the handler
       handler(request, log).then((HttpResponse response) {
-        if (response != null) serverLog.success("", request);
+        if (response.statusCode != HttpStatus.ok)
+          serverLog.error("Status code ${response.statusCode}", request);
+        else if (response != null) serverLog.success("", request);
         request.response.close();
         return;
       });

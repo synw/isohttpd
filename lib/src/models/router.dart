@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:meta/meta.dart';
+import 'log.dart';
 import 'types.dart';
 
 class IsoRouter {
@@ -9,10 +11,12 @@ class IsoRouter {
 
 class IsoRoute {
   IsoRoute({@required this.path, this.handler}) {
-    if (handler == null)
-      throw (ArgumentError("Please provide a handler for the route"));
+    handler ??= (HttpRequest request, IsoLogger logger) async {
+      print("Request: ${request.uri}");
+      return request.response;
+    };
   }
 
   final String path;
-  final IsoRequestHandler handler;
+  IsoRequestHandler handler;
 }

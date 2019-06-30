@@ -1,9 +1,10 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:isohttpd/isohttpd.dart';
 
 Future<HttpResponse> handler(HttpRequest request, IsoLogger log) async {
-  var response = jsonResponse(request, {"response": "ok"});
-  return response;
+  log.debug("Hello from request handler");
+  return jsonResponse(request, {"response": "ok"});
 }
 
 Future<String> initHost() async {
@@ -13,19 +14,22 @@ Future<String> initHost() async {
 }
 
 void main() async {
-  // set routes
-  IsoRoute onGet = IsoRoute(path: "*", handler: handler);
-  List<IsoRoute> routes = <IsoRoute>[onGet];
+  /// set routes
+  final defaultRoute = IsoRoute(path: "*", handler: handler);
+  final routes = <IsoRoute>[defaultRoute];
   final router = IsoRouter(routes);
-  // set host
+
+  /// set host
   String host = await initHost();
-  // run
-  print("Running the server in an isolate");
-  IsoHttpdRunner iso = IsoHttpdRunner(host: host, router: router);
-  await iso.run(verbose: true);
-  // listen to logs
+
+  /// init runner
+  final iso = IsoHttpdRunner(host: host, router: router);
+
+  /// listen to logs
   iso.logs.listen((dynamic data) => print("$data"));
-  iso.requestLogs.listen((dynamic data) => print("REQUEST $data"));
-  // idle
-  while (true) {}
+  iso.requestLogs.listen((dynamic data) => print("=> $data"));
+
+  /// run
+  print("Running the server in an isolate");
+  iso.run();
 }

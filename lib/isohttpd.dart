@@ -4,7 +4,7 @@
 library isohttpd;
 
 export 'src/server.dart';
-export 'src/models/response_log.dart';
+export 'src/models/request_log.dart';
 export 'src/models/log.dart';
 export 'src/models/router.dart';
 export 'src/models/types.dart';

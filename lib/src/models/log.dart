@@ -9,6 +9,8 @@ class IsoLogger {
   final SendPort chan;
   final bool verbose;
 
+  void data(dynamic data) => _processMsg(data);
+
   void warning(String msg) {
     msg = "Warning: $msg";
     _processMsg(msg);
@@ -29,9 +31,9 @@ class IsoLogger {
     _processMsg(msg);
   }
 
-  void _processMsg(String msg) {
-    if (verbose) print(msg);
+  void _processMsg(dynamic msg) {
+    //if (verbose) print(msg);
     if (chan != null) chan.send(msg);
-    logChannel.sink.add(msg);
+    if (msg is String) logChannel.sink.add(msg);
   }
 }
