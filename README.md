@@ -2,6 +2,10 @@
 
 A lightweight http server that runs in an isolate
 
+*Warning*: this is experimental and the api may change.
+
+## Example
+
    ```dart
    import 'dart:io';
    import 'package:isohttpd/isohttpd.dart';
