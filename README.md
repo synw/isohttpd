@@ -1,6 +1,6 @@
 # Isohttpd
 
-A lightweight http server that runs in an isolate
+A lightweight http server that runs in an isolate. Powered by [Iso](https://github.com/synw/iso)
 
 *Warning*: this is experimental and the api may change.
 
