@@ -8,6 +8,7 @@ A lightweight http server that runs in an isolate
 
    ```dart
    import 'dart:io';
+   import 'dart:async';
    import 'package:isohttpd/isohttpd.dart';
 
    Future<HttpResponse> handler(HttpRequest request, IsoLogger log) async {
@@ -28,6 +29,7 @@ A lightweight http server that runs in an isolate
      iso.logs.listen((dynamic data) => print("$data"));
      iso.requestLogs.listen((dynamic data) => print("REQUEST $data"));
      // idle
-     while (true) {}
+     final waiter = Completer<Null>();
+     await waiter.future;
    }
    ```
