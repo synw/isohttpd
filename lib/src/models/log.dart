@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:isolate';
 import 'package:meta/meta.dart';
 
+enum ServerStatus { started, stopped }
+
 class IsoLogger {
   IsoLogger({@required this.logChannel, this.chan, this.verbose = false});
 

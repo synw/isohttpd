@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:isohttpd/isohttpd.dart';
 import 'package:meta/meta.dart';
 import 'package:iso/iso.dart';
 import 'server.dart';
@@ -25,9 +26,11 @@ class IsoHttpdRunner {
   final StreamController<dynamic> _requestLogsController =
       StreamController<dynamic>();
   StreamSubscription<dynamic> _dataOutSub;
+  final _serverStartedCompleter = Completer<Null>();
 
   Stream<dynamic> get logs => _logsController.stream;
   Stream<dynamic> get requestLogs => _requestLogsController.stream;
+  Future<void> get onServerStarted => _serverStartedCompleter.future;
 
   static void _run(IsoRunner iso) async {
     iso.receive();
@@ -49,6 +52,10 @@ class IsoHttpdRunner {
     _verbose = data["verbose"] as bool;
     if (data.containsKey("api_key") == true)
       _apiKey = data["api_key"] as String;
+    /*print("ROUTER $_router");
+    for (final r in _router.routes) {
+      print("- Route ${r.path} / ${r.handler}");
+    }*/
 
     //print("R > config: $data");
     //print('R > on data in');
@@ -105,6 +112,7 @@ class IsoHttpdRunner {
       await server.onReady;
       //chan.send("RCHAN > server ready");
       await server.start();
+      iso.send(ServerStatus.started);
       //chan.send("RCHAN > server started");
     }
     //print("R print > Runner is running");
@@ -127,17 +135,19 @@ class IsoHttpdRunner {
     _dataOutSub = iso.dataOut.listen((dynamic data) {
       if (data is ServerRequestLog) {
         //print("RUN > REQUEST LOG DATA $data");
-        _requestLogsController.sink.add(data);
+        _addToRequestLogs(data);
+      } else if (data is ServerStatus) {
+        _serverStartedCompleter.complete();
       } else {
         //print("RUN > LOG DATA $data");
-        _logsController.sink.add(data);
+        _addToLogs(data);
       }
     });
 
     // configure the run function parameters
     Map<String, dynamic> conf = <String, dynamic>{
       "host": host,
-      "port": 8084,
+      "port": port,
       "router": router,
       "api_key": apiKey,
       "start_server": startServer,
@@ -147,6 +157,16 @@ class IsoHttpdRunner {
     iso.run(<dynamic>[conf]);
 
     //await iso.onReady;
+  }
+
+  void _addToLogs(dynamic data) {
+    if (verbose) print("$data");
+    _logsController.sink.add(data);
+  }
+
+  void _addToRequestLogs(dynamic data) {
+    if (verbose) print("$data");
+    _requestLogsController.sink.add(data);
   }
 
   void kill() {
