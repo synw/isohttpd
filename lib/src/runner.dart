@@ -6,6 +6,7 @@ import 'server.dart';
 import 'models/router.dart';
 import 'models/types.dart';
 import 'models/request_log.dart';
+import 'models/state.dart';
 
 class IsoHttpdRunner {
   IsoHttpdRunner(
@@ -26,14 +27,14 @@ class IsoHttpdRunner {
   final StreamController<dynamic> _requestLogsController =
       StreamController<dynamic>();
   StreamSubscription<dynamic> _dataOutSub;
-  final _serverStartedCompleter = Completer<Null>();
+  var _serverStartedCompleter = Completer<Null>();
 
   Stream<dynamic> get logs => _logsController.stream;
   Stream<dynamic> get requestLogs => _requestLogsController.stream;
-  Future<void> get onServerStarted => _serverStartedCompleter.future;
+  Future<Null> get onServerStarted => _serverStartedCompleter.future;
 
-  static void _run(IsoRunner iso) async {
-    iso.receive();
+  static void _run(IsoRunner isoRunner) async {
+    isoRunner.receive();
     //iso.send("R IS > Running");
 
     // get config from args
@@ -44,7 +45,7 @@ class IsoHttpdRunner {
     String _apiKey;
     bool _startServer;
     bool _verbose;
-    dynamic data = iso.args[0] as Map<String, dynamic>;
+    dynamic data = isoRunner.args[0] as Map<String, dynamic>;
     _host = data["host"] as String;
     _port = data["port"] as int;
     _router = data["router"] as IsoRouter;
@@ -56,65 +57,56 @@ class IsoHttpdRunner {
     for (final r in _router.routes) {
       print("- Route ${r.path} / ${r.handler}");
     }*/
-
-    //print("R > config: $data");
-    //print('R > on data in');
-    //dataIn.listen((dynamic data) {
-    //  print("R > DATA IN $data");
-    //});
-    /*
-    Iso.onDataIn(chan, (dynamic data) {
-      //print("R > runner data in: $data");
-      if (data is Map) {
-        _host = data["host"] as String;
-        _port = data["port"] as int;
-        _router = data["router"] as IsoRouter;
-        _startServer = data["start_server"] as bool;
-        _verbose = data["verbose"] as bool;
-        if (data.containsKey("api_key")) _apiKey = data["api_key"] as String;
-        if (!_completer.isCompleted) _completer.complete();
-      }
-      if (data is HttpdCommand) {
-        print("R > COMMAND $data");
-        switch (data) {
-          case HttpdCommand.start:
-            server.start().catchError((dynamic e) {
-              throw ("Can not start server $e");
-            });
-            break;
-          case HttpdCommand.stop:
-            server.stop().catchError((dynamic e) {
-              throw ("Can not stop server $e");
-            });
-            break;
-          case HttpdCommand.status:
-            //server.isRunning;
-            break;
-        }
-      }
-    });*/
-    //iso.send("R IS > test");
     // init server instance
     server = IsoHttpd(
         host: _host,
         port: _port,
         router: _router,
         apiKey: _apiKey,
-        chan: iso.chanOut,
+        chan: isoRunner.chanOut,
         verbose: _verbose);
     //print('R > init server');
     server.init();
     //print('R > server init completed');
     if (_startServer) {
       //print("R > start server");
-      //chan.send("RCHAN > init server");
-      //print("R > waiting server ready");
       await server.onReady;
       //chan.send("RCHAN > server ready");
       await server.start();
-      iso.send(ServerStatus.started);
+      isoRunner.send(ServerStatus.started);
       //chan.send("RCHAN > server started");
     }
+    isoRunner.dataIn.listen((dynamic data) async {
+      //print("R > DATA IN $data");
+      HttpdCommand cmd = data as HttpdCommand;
+      switch (cmd) {
+        case HttpdCommand.start:
+          if (server.status == ServerStatus.started)
+            isoRunner.send(ServerError.alreadyStarted);
+          else {
+            await server.onReady;
+            await server
+                .start()
+                .catchError((dynamic e) => throw ("Can not start server $e"));
+            server.onStarted.then((_) => isoRunner.send(ServerStatus.started));
+          }
+          break;
+        case HttpdCommand.stop:
+          if (server.status == ServerStatus.stopped)
+            isoRunner.send(ServerError.notRunning);
+          else {
+            try {
+              server.stop();
+              isoRunner.send(ServerStatus.stopped);
+            } catch (e) {
+              throw ("Can not stop server $e");
+            }
+          }
+          break;
+        case HttpdCommand.status:
+          isoRunner.send(ServerState(server.status));
+      }
+    });
     //print("R print > Runner is running");
     //iso.send("R IS > Runner is running");
     //iso.receive();
@@ -133,11 +125,37 @@ class IsoHttpdRunner {
 
     // logs relay
     _dataOutSub = iso.dataOut.listen((dynamic data) {
+      //print("DATA OUT $data");
       if (data is ServerRequestLog) {
         //print("RUN > REQUEST LOG DATA $data");
         _addToRequestLogs(data);
       } else if (data is ServerStatus) {
-        _serverStartedCompleter.complete();
+        switch (data) {
+          case ServerStatus.started:
+            if (!_serverStartedCompleter.isCompleted)
+              _serverStartedCompleter.complete();
+            break;
+          case ServerStatus.stopped:
+            _serverStartedCompleter = Completer<Null>();
+        }
+      } else if (data is ServerError) {
+        switch (data) {
+          case ServerError.alreadyStarted:
+            _addToLogs("Error: the server is already started");
+            break;
+          case ServerError.notRunning:
+            _addToLogs("Error: the server is not running");
+        }
+      } else if (data is ServerState) {
+        String status;
+        switch (data.status) {
+          case ServerStatus.started:
+            status = "running";
+            break;
+          case ServerStatus.stopped:
+            status = "not running";
+        }
+        _addToLogs("Server status: $status");
       } else {
         //print("RUN > LOG DATA $data");
         _addToLogs(data);
@@ -154,9 +172,17 @@ class IsoHttpdRunner {
       "verbose": verbose,
     };
     // run
-    iso.run(<dynamic>[conf]);
+    await iso.run(<dynamic>[conf]);
+    await iso.onCanReceive;
+  }
 
-    //await iso.onReady;
+  void kill() {
+    iso.kill();
+  }
+
+  void dispose() {
+    _dataOutSub.cancel();
+    _logsController.close();
   }
 
   void _addToLogs(dynamic data) {
@@ -167,14 +193,5 @@ class IsoHttpdRunner {
   void _addToRequestLogs(dynamic data) {
     if (verbose) print("$data");
     _requestLogsController.sink.add(data);
-  }
-
-  void kill() {
-    iso.kill();
-  }
-
-  void dispose() {
-    _dataOutSub.cancel();
-    _logsController.close();
   }
 }

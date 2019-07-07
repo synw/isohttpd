@@ -5,10 +5,10 @@ import 'dart:isolate';
 import 'package:isohttpd/isohttpd.dart';
 import 'package:isohttpd/src/models/router.dart';
 import 'package:meta/meta.dart';
-import 'package:path/path.dart' as p;
 import 'package:body_parser/body_parser.dart';
 import 'models/request_log.dart';
 import 'models/log.dart';
+import 'logger.dart';
 
 class IsoHttpd {
   IsoHttpd(
@@ -57,6 +57,7 @@ class IsoHttpd {
   Future<Null> get onReady => _readyCompleter.future;
   Future<Null> get onStarted => _onStartedCompleter.future;
   bool get isRunning => _isRunning;
+  ServerStatus get status => _status();
 
   static Future<BodyParseResult> decodeMultipartRequest(
           HttpRequest request) async =>
@@ -176,37 +177,24 @@ class IsoHttpd {
     });
   }
 
-  Future<bool> stop() async {
+  bool stop() {
     if (_isRunning) {
       _incomingRequestsSub.cancel();
       _isRunning = false;
       log.info("Server stopped");
       return true;
     }
-    log.warning("The server is already running");
+    log.warning("The server is not running");
     return false;
   }
 
-  Future<Map<String, List<Map<String, dynamic>>>> getDirectoryListing(
-      Directory dir) async {
-    List contents = dir.listSync()..sort((a, b) => a.path.compareTo(b.path));
-    var dirs = <Map<String, String>>[];
-    var files = <Map<String, dynamic>>[];
-    for (var fileOrDir in contents) {
-      if (fileOrDir is Directory) {
-        var dir = Directory("${fileOrDir.path}");
-        dirs.add({
-          "name": p.basename(dir.path),
-        });
-      } else {
-        var file = File("${fileOrDir.path}");
-        files.add(<String, dynamic>{
-          "name": p.basename(file.path),
-          "size": file.lengthSync()
-        });
-      }
-    }
-    return {"files": files, "directories": dirs};
+  ServerStatus _status() {
+    ServerStatus s;
+    if (_isRunning == true)
+      s = ServerStatus.started;
+    else
+      s = ServerStatus.stopped;
+    return s;
   }
 
   void dispose() async {
