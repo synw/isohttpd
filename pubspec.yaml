@@ -11,5 +11,4 @@ dev_dependencies:
 dependencies:
   meta: ^1.1.6
   body_parser: ^1.1.1
-  iso:
-    path: ../iso
+  iso: ^0.2.0
