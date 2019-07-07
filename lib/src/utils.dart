@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:convert';
 import 'package:path/path.dart' as p;
+import 'package:body_parser/body_parser.dart';
 
 Future<HttpResponse> jsonResponse(HttpRequest request, dynamic data) async {
   request.response.statusCode = HttpStatus.ok;
@@ -9,6 +10,9 @@ Future<HttpResponse> jsonResponse(HttpRequest request, dynamic data) async {
   request.response.write(jsonEncode(data));
   return request.response;
 }
+
+Future<BodyParseResult> decodeMultipartRequest(HttpRequest request) async =>
+    await parseBody(request);
 
 Future<Map<String, List<Map<String, dynamic>>>> directoryListing(
     Directory dir) async {

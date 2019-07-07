@@ -5,7 +5,6 @@ import 'dart:isolate';
 import 'package:isohttpd/isohttpd.dart';
 import 'package:isohttpd/src/models/router.dart';
 import 'package:meta/meta.dart';
-import 'package:body_parser/body_parser.dart';
 import 'models/request_log.dart';
 import 'models/log.dart';
 import 'logger.dart';
@@ -58,10 +57,6 @@ class IsoHttpd {
   Future<Null> get onStarted => _onStartedCompleter.future;
   bool get isRunning => _isRunning;
   ServerStatus get status => _status();
-
-  static Future<BodyParseResult> decodeMultipartRequest(
-          HttpRequest request) async =>
-      await parseBody(request);
 
   void init() {
     log.info("Initializing server at $host:$port");
