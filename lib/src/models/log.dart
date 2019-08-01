@@ -32,7 +32,7 @@ class IsoLogger {
   }
 
   void _processMsg(dynamic msg) {
-    //if (verbose) print(msg);
+    if (verbose) print(msg);
     if (chan != null) chan.send(msg);
     if (msg is String) logChannel.sink.add(msg);
   }
