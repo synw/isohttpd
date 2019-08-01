@@ -23,14 +23,13 @@ class IsoHttpdRunner {
   final bool verbose;
 
   Iso iso;
-  final StreamController<dynamic> _logsController = StreamController<dynamic>();
-  final StreamController<dynamic> _requestLogsController =
-      StreamController<dynamic>();
+  final _logsController = StreamController<String>();
+  final _requestLogsController = StreamController<ServerRequestLog>();
   StreamSubscription<dynamic> _dataOutSub;
   var _serverStartedCompleter = Completer<Null>();
 
-  Stream<dynamic> get logs => _logsController.stream;
-  Stream<dynamic> get requestLogs => _requestLogsController.stream;
+  Stream<String> get logs => _logsController.stream;
+  Stream<ServerRequestLog> get requestLogs => _requestLogsController.stream;
   Future<Null> get onServerStarted => _serverStartedCompleter.future;
 
   static void _run(IsoRunner isoRunner) async {
@@ -158,7 +157,7 @@ class IsoHttpdRunner {
         _addToLogs("Server status: $status");
       } else {
         //print("RUN > LOG DATA $data");
-        _addToLogs(data);
+        _addToLogs("$data");
       }
     });
 
@@ -177,7 +176,8 @@ class IsoHttpdRunner {
   }
 
   void kill() {
-    iso.kill();
+    iso.dispose();
+    dispose();
   }
 
   void dispose() {
@@ -185,12 +185,12 @@ class IsoHttpdRunner {
     _logsController.close();
   }
 
-  void _addToLogs(dynamic data) {
+  void _addToLogs(String data) {
     if (verbose) print("$data");
     _logsController.sink.add(data);
   }
 
-  void _addToRequestLogs(dynamic data) {
+  void _addToRequestLogs(ServerRequestLog data) {
     if (verbose) print("$data");
     _requestLogsController.sink.add(data);
   }
