@@ -26,8 +26,8 @@ void main() async {
   final iso = IsoHttpdRunner(host: host, router: router);
 
   /// listen to logs
-  iso.logs.listen((dynamic data) => print("$data"));
-  iso.requestLogs.listen((dynamic data) => print("=> $data"));
+  iso.logs.listen((String data) => print("$data"));
+  iso.requestLogs.listen((ServerRequestLog data) => print("=> $data"));
 
   /// run
   print("Running the server in an isolate");
