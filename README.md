@@ -4,8 +4,6 @@
 
 A lightweight http server that runs in an isolate. Powered by [Iso](https://github.com/synw/iso)
 
-*Warning*: this is experimental and the api may change.
-
 ## Example
 
    ```dart
@@ -28,8 +26,8 @@ A lightweight http server that runs in an isolate. Powered by [Iso](https://gith
      await iso.run(verbose: true);
 
      // listen to logs
-     iso.logs.listen((dynamic data) => print("$data"));
-     iso.requestLogs.listen((dynamic data) => print("REQUEST $data"));
+     iso.logs.listen((String data) => print("$data"));
+  iso.requestLogs.listen((ServerRequestLog data) => print("=> $data"));
      // idle
      final waiter = Completer<Null>();
      await waiter.future;
