@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:pedantic/pedantic.dart';
 import 'package:isohttpd/isohttpd.dart';
 import 'package:meta/meta.dart';
 import 'package:iso/iso.dart';
@@ -50,8 +51,9 @@ class IsoHttpdRunner {
     _router = data["router"] as IsoRouter;
     _startServer = data["start_server"] as bool;
     _verbose = data["verbose"] as bool;
-    if (data.containsKey("api_key") == true)
+    if (data.containsKey("api_key") == true) {
       _apiKey = data["api_key"] as String;
+    }
     /*print("ROUTER $_router");
     for (final r in _router.routes) {
       print("- Route ${r.path} / ${r.handler}");
@@ -80,20 +82,21 @@ class IsoHttpdRunner {
       HttpdCommand cmd = data as HttpdCommand;
       switch (cmd) {
         case HttpdCommand.start:
-          if (server.status == ServerStatus.started)
+          if (server.status == ServerStatus.started) {
             isoRunner.send(ServerError.alreadyStarted);
-          else {
+          } else {
             await server.onReady;
             await server
                 .start()
                 .catchError((dynamic e) => throw ("Can not start server $e"));
-            server.onStarted.then((_) => isoRunner.send(ServerStatus.started));
+            unawaited(server.onStarted
+                .then((_) => isoRunner.send(ServerStatus.started)));
           }
           break;
         case HttpdCommand.stop:
-          if (server.status == ServerStatus.stopped)
+          if (server.status == ServerStatus.stopped) {
             isoRunner.send(ServerError.notRunning);
-          else {
+          } else {
             try {
               server.stop();
               isoRunner.send(ServerStatus.stopped);
@@ -131,8 +134,9 @@ class IsoHttpdRunner {
       } else if (data is ServerStatus) {
         switch (data) {
           case ServerStatus.started:
-            if (!_serverStartedCompleter.isCompleted)
+            if (!_serverStartedCompleter.isCompleted) {
               _serverStartedCompleter.complete();
+            }
             break;
           case ServerStatus.stopped:
             _serverStartedCompleter = Completer<Null>();

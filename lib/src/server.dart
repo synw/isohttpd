@@ -2,11 +2,12 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
 import 'dart:isolate';
-import 'package:isohttpd/isohttpd.dart';
+import 'package:pedantic/pedantic.dart';
 import 'package:isohttpd/src/models/router.dart';
 import 'package:meta/meta.dart';
 import 'models/request_log.dart';
 import 'models/log.dart';
+import 'models/types.dart';
 import 'logger.dart';
 
 class IsoHttpd {
@@ -89,8 +90,10 @@ class IsoHttpd {
     //print("HEADERS");
     //print("${request.headers}");
     try {
-      if (request.headers.value(HttpHeaders.authorizationHeader) != tokenString)
+      if (request.headers.value(HttpHeaders.authorizationHeader) !=
+          tokenString) {
         return false;
+      }
     } catch (_) {
       log.error("Can not get authorization header");
       return false;
@@ -107,7 +110,9 @@ class IsoHttpd {
     }
     _isRunning = true;
     //log.debug("S > start > completing");
-    if (!_onStartedCompleter.isCompleted) _onStartedCompleter.complete();
+    if (!_onStartedCompleter.isCompleted) {
+      _onStartedCompleter.complete();
+    }
     log.info("Server started");
     _incomingRequestsSub = _incomingRequests.listen((request) {
       //log.debug("REQUEST ${request.uri.path} / ${request.headers.contentType}");
@@ -163,9 +168,11 @@ class IsoHttpd {
       }
       // run the handler
       handler(request, log).then((HttpResponse response) {
-        if (response.statusCode != HttpStatus.ok)
+        if (response.statusCode != HttpStatus.ok) {
           serverLog.error("Status code ${response.statusCode}", request);
-        else if (response != null) serverLog.success("", request);
+        } else if (response != null) {
+          serverLog.success("", request);
+        }
         request.response.close();
         return;
       });
@@ -185,15 +192,16 @@ class IsoHttpd {
 
   ServerStatus _status() {
     ServerStatus s;
-    if (_isRunning == true)
+    if (_isRunning == true) {
       s = ServerStatus.started;
-    else
+    } else {
       s = ServerStatus.stopped;
+    }
     return s;
   }
 
   void dispose() async {
-    _requestsLogChannel.close();
-    _logsChannel.close();
+    unawaited(_requestsLogChannel.close());
+    unawaited(_logsChannel.close());
   }
 }
