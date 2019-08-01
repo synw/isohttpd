@@ -9,9 +9,9 @@ environment:
   sdk: '>=2.2.0 <3.0.0'
 
 dev_dependencies:
-  test: ^1.0.0
+  test: ^1.6.5
 
 dependencies:
-  meta: ^1.1.6
+  meta: ^1.1.7
   body_parser: ^1.1.1
-  iso: ^0.2.0
+  iso: ^0.2.2
