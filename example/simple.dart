@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:isohttpd/isohttpd.dart';
 
 Future<HttpResponse> handler(HttpRequest request, IsoLogger log) async {
-  log.debug("Hello from request handler");
+  log.debug(IsoServerLog(message: "Hello from request handler"));
   return jsonResponse(request, {"response": "ok"});
 }
 
@@ -20,24 +20,16 @@ void main() async {
   final router = IsoRouter(routes);
 
   /// set host
-  String host = await initHost();
+  final host = await initHost();
 
   /// init runner
   final iso = IsoHttpdRunner(host: host, router: router);
 
   /// listen to logs
-  iso.logs.listen((String data) => print("$data"));
+  iso.logs.listen((IsoServerLog data) => print("$data"));
   iso.requestLogs.listen((ServerRequestLog data) => print("=> $data"));
 
   /// run
   print("Running the server in an isolate");
-  await iso.run(startServer: false);
-  iso.status();
-  iso.start();
-  await iso.onServerStarted;
-  iso.status();
-  await Future<Null>.delayed(Duration(seconds: 3));
-  iso.stop();
-  iso.status();
-  //iso.dispose();
+  await iso.run();
 }

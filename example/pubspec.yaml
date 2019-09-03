@@ -15,4 +15,4 @@ dev_dependencies:
 
 dependencies:
   isohttpd:
-    path: ../../
+    path: ../
