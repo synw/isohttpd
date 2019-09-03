@@ -12,8 +12,8 @@ import 'models/state.dart';
 class IsoHttpdRunner {
   IsoHttpdRunner(
       {@required this.host,
-      this.port = 8084,
       @required this.router,
+      this.port = 8084,
       this.apiKey,
       this.verbose = false});
 
@@ -22,16 +22,29 @@ class IsoHttpdRunner {
   final IsoRouter router;
   final String apiKey;
   final bool verbose;
-
   Iso iso;
-  final _logsController = StreamController<String>();
-  final _requestLogsController = StreamController<ServerRequestLog>();
+
+  final _logsController = StreamController<IsoServerLog>.broadcast();
+  final _requestLogsController = StreamController<ServerRequestLog>.broadcast();
   StreamSubscription<dynamic> _dataOutSub;
   var _serverStartedCompleter = Completer<Null>();
+  final _ready = Completer<Null>();
+  bool _isRunning;
 
-  Stream<String> get logs => _logsController.stream;
+  /// Server logs stream
+  Stream<IsoServerLog> get logs => _logsController.stream;
+
+  /// Request logs stream
   Stream<ServerRequestLog> get requestLogs => _requestLogsController.stream;
+
+  /// The server has started event
   Future<Null> get onServerStarted => _serverStartedCompleter.future;
+
+  /// The server is ready to use
+  Future get onReady => _ready.future;
+
+  /// Is the server running?
+  bool get isRunning => _isRunning;
 
   static void _run(IsoRunner isoRunner) async {
     isoRunner.receive();
@@ -45,7 +58,7 @@ class IsoHttpdRunner {
     String _apiKey;
     bool _startServer;
     bool _verbose;
-    dynamic data = isoRunner.args[0] as Map<String, dynamic>;
+    final data = isoRunner.args[0] as Map<String, dynamic>;
     _host = data["host"] as String;
     _port = data["port"] as int;
     _router = data["router"] as IsoRouter;
@@ -65,9 +78,9 @@ class IsoHttpdRunner {
         router: _router,
         apiKey: _apiKey,
         chan: isoRunner.chanOut,
-        verbose: _verbose);
-    //print('R > init server');
-    server.init();
+        verbose: _verbose)
+      ..init();
+    isoRunner.send(ServerStatus.ready);
     //print('R > server init completed');
     if (_startServer) {
       //print("R > start server");
@@ -79,7 +92,7 @@ class IsoHttpdRunner {
     }
     isoRunner.dataIn.listen((dynamic data) async {
       //print("R > DATA IN $data");
-      HttpdCommand cmd = data as HttpdCommand;
+      final cmd = data as HttpdCommand;
       switch (cmd) {
         case HttpdCommand.start:
           if (server.status == ServerStatus.started) {
@@ -114,12 +127,16 @@ class IsoHttpdRunner {
     //iso.receive();
   }
 
+  /// Start the server command
   void start() => iso.send(HttpdCommand.start);
 
+  /// Stop the server command
   void stop() => iso.send(HttpdCommand.stop);
 
+  /// Server status command
   void status() => iso.send(HttpdCommand.status);
 
+  /// Run the server in an isolate
   Future<void> run({bool startServer = true, bool verbose = false}) async {
     assert(host != null);
     assert(router != null);
@@ -135,19 +152,36 @@ class IsoHttpdRunner {
         switch (data) {
           case ServerStatus.started:
             if (!_serverStartedCompleter.isCompleted) {
+              _isRunning = true;
               _serverStartedCompleter.complete();
+              _addToLogs(IsoServerLog(
+                  tyoe: IsoLogType.info,
+                  eventType: IsoServerEventType.startServer,
+                  message: "The server is started"));
             }
             break;
           case ServerStatus.stopped:
             _serverStartedCompleter = Completer<Null>();
+            _isRunning = false;
+            _addToLogs(IsoServerLog(
+                tyoe: IsoLogType.info,
+                eventType: IsoServerEventType.stopServer,
+                message: "The server is stopped"));
+            break;
+          case ServerStatus.ready:
+            _ready.complete();
         }
       } else if (data is ServerError) {
         switch (data) {
           case ServerError.alreadyStarted:
-            _addToLogs("Error: the server is already started");
+            _addToLogs(IsoServerLog(
+                tyoe: IsoLogType.error,
+                message: "Error: the server is already started"));
             break;
           case ServerError.notRunning:
-            _addToLogs("Error: the server is not running");
+            _addToLogs(IsoServerLog(
+                tyoe: IsoLogType.error,
+                message: "Error: the server is not running"));
         }
       } else if (data is ServerState) {
         String status;
@@ -157,16 +191,20 @@ class IsoHttpdRunner {
             break;
           case ServerStatus.stopped:
             status = "not running";
+            break;
+          default:
         }
-        _addToLogs("Server status: $status");
+        _addToLogs(IsoServerLog(
+            eventType: IsoServerEventType.initialization,
+            message: "Server status: $status"));
       } else {
         //print("RUN > LOG DATA $data");
-        _addToLogs("$data");
+        _addToLogs(IsoServerLog(message: "$data"));
       }
     });
 
     // configure the run function parameters
-    Map<String, dynamic> conf = <String, dynamic>{
+    final conf = <String, dynamic>{
       "host": host,
       "port": port,
       "router": router,
@@ -175,27 +213,35 @@ class IsoHttpdRunner {
       "verbose": verbose,
     };
     // run
+    print("ARGS $conf");
     await iso.run(<dynamic>[conf]);
     await iso.onCanReceive;
   }
 
+  /// Kill the server
   void kill() {
     iso.dispose();
     dispose();
   }
 
+  /// Dispose streams
   void dispose() {
     _dataOutSub.cancel();
+    _requestLogsController.close();
     _logsController.close();
   }
 
-  void _addToLogs(String data) {
-    if (verbose) print("$data");
+  void _addToLogs(IsoServerLog data) {
+    if (verbose) {
+      print("$data");
+    }
     _logsController.sink.add(data);
   }
 
   void _addToRequestLogs(ServerRequestLog data) {
-    if (verbose) print("$data");
+    if (verbose) {
+      print("$data");
+    }
     _requestLogsController.sink.add(data);
   }
 }

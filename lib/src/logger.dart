@@ -1,47 +1,44 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:isolate';
-import 'models/request_log.dart';
 import 'package:meta/meta.dart';
+import 'models/server_log.dart';
 
-class IsoRequestLogger {
-  IsoRequestLogger(
-      {@required this.logChannel, this.chan, this.verbose = false});
+class IsoLogger {
+  IsoLogger({@required this.logChannel, this.chan, this.verbose = false});
 
-  final StreamController<ServerRequestLog> logChannel;
+  final StreamController<IsoServerLog> logChannel;
   final SendPort chan;
   final bool verbose;
 
-  void success(String msg, HttpRequest request) {
-    var logItem = ServerRequestLog(
-        logClass: LogMessageClass.success,
-        statusCode: request.response.statusCode,
-        requestUrl: request.uri.path,
-        message: msg);
+  void data(IsoServerLog logItem) => _processMsg(logItem);
+
+  void warning(IsoServerLog logItem) {
+    logItem.tyoe = IsoLogType.warning;
     _processMsg(logItem);
   }
 
-  void warning(String msg, HttpRequest request) {
-    var logItem = ServerRequestLog(
-        logClass: LogMessageClass.warning,
-        statusCode: request.response.statusCode,
-        requestUrl: request.uri.path,
-        message: msg);
+  void error(IsoServerLog logItem) {
+    logItem.tyoe = IsoLogType.error;
     _processMsg(logItem);
   }
 
-  void error(String msg, HttpRequest request) {
-    var logItem = ServerRequestLog(
-        logClass: LogMessageClass.error,
-        statusCode: request.response.statusCode,
-        requestUrl: request.uri.path,
-        message: msg);
+  void info(IsoServerLog logItem) {
+    logItem.tyoe = IsoLogType.info;
     _processMsg(logItem);
   }
 
-  void _processMsg(ServerRequestLog logItem) {
-    //if (verbose) print(logItem);
+  void debug(IsoServerLog logItem) {
+    logItem.tyoe = IsoLogType.debug;
+    _processMsg(logItem);
+  }
+
+  void _processMsg(IsoServerLog logItem) {
+    if (verbose) {
+      print(logItem.message);
+    }
+    if (chan != null) {
+      chan.send(logItem.message);
+    }
     logChannel.sink.add(logItem);
-    if (chan != null) chan.send(logItem);
   }
 }

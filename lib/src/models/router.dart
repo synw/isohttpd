@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:meta/meta.dart';
-import 'log.dart';
+import '../logger.dart';
 import 'types.dart';
 
 class IsoRouter {
