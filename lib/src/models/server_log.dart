@@ -11,13 +11,20 @@ enum IsoServerEventType { initialization, startServer, stopServer }
 
 class IsoServerLog {
   IsoServerLog(
-      {@required this.message, this.tyoe, this.payload, this.eventType});
+      {@required this.message,
+      this.tyoe,
+      this.requestUrl,
+      this.eventType,
+      this.payload,
+      this.statusCode});
 
   IsoLogType tyoe;
   String message;
-  dynamic payload;
   IsoServerEventType eventType;
   DateTime date;
+  String requestUrl;
+  int statusCode;
+  dynamic payload;
 
   @override
   String toString() {
