@@ -3,7 +3,7 @@ import 'dart:io';
 import 'dart:convert';
 import 'dart:isolate';
 import 'package:pedantic/pedantic.dart';
-import 'package:isohttpd/src/models/router.dart';
+import 'models/router.dart';
 import 'package:meta/meta.dart';
 import 'models/request_log.dart';
 import 'logger.dart';

@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:pedantic/pedantic.dart';
-import 'package:isohttpd/isohttpd.dart';
 import 'package:meta/meta.dart';
 import 'package:iso/iso.dart';
 import 'server.dart';
@@ -8,6 +7,7 @@ import 'models/router.dart';
 import 'models/types.dart';
 import 'models/request_log.dart';
 import 'models/state.dart';
+import 'models/server_log.dart';
 
 class IsoHttpdRunner {
   IsoHttpdRunner(
