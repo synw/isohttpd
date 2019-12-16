@@ -59,10 +59,12 @@ class IsoHttpd {
   Future<Null> get onStarted => _onStartedCompleter.future;
   bool get isRunning => _isRunning;
   ServerStatus get status => _status();
+  HttpServer _server;
 
   void init() {
     log.debug(IsoServerLog(message: "Initializing server at $host:$port"));
     HttpServer.bind(host, port).then((HttpServer s) {
+      _server = s;
       //print('S > bind');
       _incomingRequests = s.asBroadcastStream();
       _isInitialized = true;
@@ -202,6 +204,8 @@ class IsoHttpd {
   }
 
   void dispose() async {
+    _server?.close();
+    _server = null;
     unawaited(_requestsLogChannel.close());
     unawaited(_logsChannel.close());
   }
