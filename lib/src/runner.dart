@@ -8,8 +8,8 @@ import 'models/request_log.dart';
 import 'models/router.dart';
 import 'models/server_log.dart';
 import 'models/state.dart';
-import 'models/types.dart';
 import 'server.dart';
+import 'types.dart';
 
 class IsoHttpdRunner {
   IsoHttpdRunner(
@@ -157,7 +157,7 @@ class IsoHttpdRunner {
               _isRunning = true;
               _serverStartedCompleter.complete();
               _addToLogs(IsoServerLog(
-                  tyoe: IsoLogType.info,
+                  type: IsoLogType.info,
                   eventType: IsoServerEventType.startServer,
                   message: "The server is started"));
             }
@@ -166,7 +166,7 @@ class IsoHttpdRunner {
             _serverStartedCompleter = Completer<void>();
             _isRunning = false;
             _addToLogs(IsoServerLog(
-                tyoe: IsoLogType.info,
+                type: IsoLogType.info,
                 eventType: IsoServerEventType.stopServer,
                 message: "The server is stopped"));
             break;
@@ -177,12 +177,12 @@ class IsoHttpdRunner {
         switch (data) {
           case ServerError.alreadyStarted:
             _addToLogs(IsoServerLog(
-                tyoe: IsoLogType.error,
+                type: IsoLogType.error,
                 message: "Error: the server is already started"));
             break;
           case ServerError.notRunning:
             _addToLogs(IsoServerLog(
-                tyoe: IsoLogType.error,
+                type: IsoLogType.error,
                 message: "Error: the server is not running"));
         }
       } else if (data is ServerState) {

@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:body_parser/body_parser.dart';
 import 'package:path/path.dart' as p;
 
+/// A json response builder
 Future<HttpResponse> jsonResponse(HttpRequest request, dynamic data) async {
   request.response.statusCode = HttpStatus.ok;
   request.response.headers.contentType =
@@ -12,9 +13,11 @@ Future<HttpResponse> jsonResponse(HttpRequest request, dynamic data) async {
   return request.response;
 }
 
+/// Decode post requests
 Future<BodyParseResult> decodeMultipartRequest(HttpRequest request) async =>
     parseBody(request);
 
+/// A convenience function to list a directory
 Future<Map<String, List<Map<String, dynamic>>>> directoryListing(
     Directory dir) async {
   final contents = dir.listSync()..sort((a, b) => a.path.compareTo(b.path));

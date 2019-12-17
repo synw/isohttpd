@@ -4,33 +4,46 @@ import 'dart:isolate';
 import 'package:meta/meta.dart';
 
 import 'models/server_log.dart';
+import 'types.dart';
 
+/// The logger
 class IsoLogger {
+  /// Default constructor
   IsoLogger({@required this.logChannel, this.chan, this.verbose = false});
 
+  /// The log stream
   final StreamController<IsoServerLog> logChannel;
+
+  /// The port to use
   final SendPort chan;
+
+  /// Verbosity
   final bool verbose;
 
+  /// The log data
   void data(IsoServerLog logItem) => _processMsg(logItem);
 
+  /// Warning level
   void warning(IsoServerLog logItem) {
-    logItem.tyoe = IsoLogType.warning;
+    logItem.type = IsoLogType.warning;
     _processMsg(logItem);
   }
 
+  /// Error level
   void error(IsoServerLog logItem) {
-    logItem.tyoe = IsoLogType.error;
+    logItem.type = IsoLogType.error;
     _processMsg(logItem);
   }
 
+  /// Info level
   void info(IsoServerLog logItem) {
-    logItem.tyoe = IsoLogType.info;
+    logItem.type = IsoLogType.info;
     _processMsg(logItem);
   }
 
+  /// Debug level
   void debug(IsoServerLog logItem) {
-    logItem.tyoe = IsoLogType.debug;
+    logItem.type = IsoLogType.debug;
     _processMsg(logItem);
   }
 

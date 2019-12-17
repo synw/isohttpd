@@ -10,10 +10,12 @@ import 'logger.dart';
 import 'models/request_log.dart';
 import 'models/router.dart';
 import 'models/server_log.dart';
-import 'models/types.dart';
 import 'request_logger.dart';
+import 'types.dart';
 
+/// The http server
 class IsoHttpd {
+  /// Provide a [host] and a [router]
   IsoHttpd(
       {@required this.host,
       @required this.router,
@@ -34,45 +36,66 @@ class IsoHttpd {
     }
   }
 
+  /// The hostname
   final String host;
+
+  /// The server port
   final int port;
+
+  /// The sendport to use
   final SendPort chan;
+
+  /// The http router
   final IsoRouter router;
+
+  /// The server api key
   final String apiKey;
+
+  /// Verbosity
   final bool verbose;
 
+  /// The logger
   IsoLogger log;
+
+  /// The requests logger
   IsoRequestLogger requestLogger;
   Stream<HttpRequest> _incomingRequests;
   bool _isRunning = false;
   bool _isInitialized = false;
-  final Completer<Null> _onStartedCompleter = Completer<Null>();
-  final Completer<Null> _readyCompleter = Completer<Null>();
-  final StreamController<ServerRequestLog> _requestsLogChannel =
-      StreamController<ServerRequestLog>.broadcast();
-  final StreamController<IsoServerLog> _logsChannel =
-      StreamController<IsoServerLog>.broadcast();
+  final _onStartedCompleter = Completer<void>();
+  final _readyCompleter = Completer<void>();
+  final _requestsLogChannel = StreamController<ServerRequestLog>.broadcast();
+  final _logsChannel = StreamController<IsoServerLog>.broadcast();
   StreamSubscription _incomingRequestsSub;
-
-  Stream<IsoServerLog> get logs => _logsChannel.stream;
-  Stream<ServerRequestLog> get requestLogs => _requestsLogChannel.stream;
-
-  Future<void> get onReady => _readyCompleter.future;
-  Future<void> get onStarted => _onStartedCompleter.future;
-  bool get isRunning => _isRunning;
-  ServerStatus get status => _status();
   HttpServer _server;
 
+  /// The logs stream
+  Stream<IsoServerLog> get logs => _logsChannel.stream;
+
+  /// The requests logs stream
+  Stream<ServerRequestLog> get requestLogs => _requestsLogChannel.stream;
+
+  /// Server is ready callback
+  Future<void> get onReady => _readyCompleter.future;
+
+  /// Server started callback
+  Future<void> get onStarted => _onStartedCompleter.future;
+
+  /// Is the server running
+  bool get isRunning => _isRunning;
+
+  /// The server status
+  ServerStatus get status => _status();
+
+  /// Initialize the server
   void init() {
     log.debug(IsoServerLog(message: "Initializing server at $host:$port"));
     HttpServer.bind(host, port).then((HttpServer s) {
       _server = s;
-      //print('S > bind');
       _incomingRequests = s.asBroadcastStream();
       _isInitialized = true;
       _readyCompleter.complete();
       log.info(IsoServerLog(message: "Server initialized at $host:$port"));
-      //print('S > end bind');
     });
   }
 
@@ -90,10 +113,9 @@ class IsoHttpd {
     requestLogger.warning(msg, request);
   }
 
+  /// Verify the api key
   bool verifyToken(HttpRequest request) {
     final tokenString = "Bearer $apiKey";
-    //print("HEADERS");
-    //print("${request.headers}");
     try {
       if (request.headers.value(HttpHeaders.authorizationHeader) !=
           tokenString) {
@@ -106,6 +128,7 @@ class IsoHttpd {
     return true;
   }
 
+  /// Start the server
   Future<void> start() async {
     assert(_isInitialized);
     log.info(IsoServerLog(message: "Starting server"));
@@ -184,6 +207,7 @@ class IsoHttpd {
     });
   }
 
+  /// Stop the server
   bool stop() {
     if (_isRunning) {
       _incomingRequestsSub.cancel();
@@ -205,6 +229,7 @@ class IsoHttpd {
     return s;
   }
 
+  /// Cleanup when finished using
   Future<void> dispose() async {
     await _server?.close();
     _server = null;

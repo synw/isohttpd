@@ -1,30 +1,39 @@
 import 'package:meta/meta.dart';
 
-enum IsoLogType {
-  debug,
-  info,
-  warning,
-  error,
-}
+import '../types.dart';
 
-enum IsoServerEventType { initialization, startServer, stopServer }
-
+/// Server log message
 class IsoServerLog {
+  /// Default constructor
   IsoServerLog(
       {@required this.message,
-      this.tyoe,
+      this.type,
       this.requestUrl,
       this.eventType,
       this.payload,
+      this.date,
       this.statusCode});
 
-  IsoLogType tyoe;
-  String message;
-  IsoServerEventType eventType;
-  DateTime date;
-  String requestUrl;
-  int statusCode;
-  dynamic payload;
+  /// The log level
+  IsoLogType type;
+
+  /// The message
+  final String message;
+
+  /// The server event
+  final IsoServerEventType eventType;
+
+  /// The event date
+  final DateTime date;
+
+  /// The requested url
+  final String requestUrl;
+
+  /// The http status code
+  final int statusCode;
+
+  /// The log payload
+  final dynamic payload;
 
   @override
   String toString() {
