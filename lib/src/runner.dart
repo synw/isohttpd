@@ -1,13 +1,15 @@
 import 'dart:async';
-import 'package:pedantic/pedantic.dart';
-import 'package:meta/meta.dart';
+
 import 'package:iso/iso.dart';
-import 'server.dart';
-import 'models/router.dart';
-import 'models/types.dart';
+import 'package:meta/meta.dart';
+import 'package:pedantic/pedantic.dart';
+
 import 'models/request_log.dart';
-import 'models/state.dart';
+import 'models/router.dart';
 import 'models/server_log.dart';
+import 'models/state.dart';
+import 'models/types.dart';
+import 'server.dart';
 
 class IsoHttpdRunner {
   IsoHttpdRunner(
@@ -27,8 +29,8 @@ class IsoHttpdRunner {
   final _logsController = StreamController<IsoServerLog>.broadcast();
   final _requestLogsController = StreamController<ServerRequestLog>.broadcast();
   StreamSubscription<dynamic> _dataOutSub;
-  var _serverStartedCompleter = Completer<Null>();
-  final _ready = Completer<Null>();
+  var _serverStartedCompleter = Completer<void>();
+  final _ready = Completer<void>();
   bool _isRunning;
 
   /// Server logs stream
@@ -38,7 +40,7 @@ class IsoHttpdRunner {
   Stream<ServerRequestLog> get requestLogs => _requestLogsController.stream;
 
   /// The server has started event
-  Future<Null> get onServerStarted => _serverStartedCompleter.future;
+  Future<void> get onServerStarted => _serverStartedCompleter.future;
 
   /// The server is ready to use
   Future get onReady => _ready.future;
@@ -46,7 +48,7 @@ class IsoHttpdRunner {
   /// Is the server running?
   bool get isRunning => _isRunning;
 
-  static void _run(IsoRunner isoRunner) async {
+  static Future<void> _run(IsoRunner isoRunner) async {
     isoRunner.receive();
     //iso.send("R IS > Running");
 
@@ -161,7 +163,7 @@ class IsoHttpdRunner {
             }
             break;
           case ServerStatus.stopped:
-            _serverStartedCompleter = Completer<Null>();
+            _serverStartedCompleter = Completer<void>();
             _isRunning = false;
             _addToLogs(IsoServerLog(
                 tyoe: IsoLogType.info,

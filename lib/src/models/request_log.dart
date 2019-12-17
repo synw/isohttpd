@@ -19,7 +19,7 @@ class ServerRequestLog {
 
   @override
   String toString() {
-    String date = "${time.hour}:${time.minute}:${time.second}";
+    final date = "${time.hour}:${time.minute}:${time.second}";
     String msgClass;
     switch (logClass) {
       case LogMessageClass.success:
@@ -34,7 +34,7 @@ class ServerRequestLog {
       default:
     }
     if (requestUrl == "") requestUrl = "/";
-    String msg = "$date $statusCode $msgClass $requestUrl $message";
+    final msg = "$date $statusCode $msgClass $requestUrl $message";
     return msg;
   }
 }

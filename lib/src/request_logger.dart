@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
+
 import 'package:meta/meta.dart';
+
 import 'models/request_log.dart';
 
 class IsoRequestLogger {
@@ -13,7 +15,7 @@ class IsoRequestLogger {
   final bool verbose;
 
   void success(String msg, HttpRequest request) {
-    var logItem = ServerRequestLog(
+    final logItem = ServerRequestLog(
         logClass: LogMessageClass.success,
         statusCode: request.response.statusCode,
         requestUrl: request.uri.path,
@@ -22,7 +24,7 @@ class IsoRequestLogger {
   }
 
   void warning(String msg, HttpRequest request) {
-    var logItem = ServerRequestLog(
+    final logItem = ServerRequestLog(
         logClass: LogMessageClass.warning,
         statusCode: request.response.statusCode,
         requestUrl: request.uri.path,
@@ -31,7 +33,7 @@ class IsoRequestLogger {
   }
 
   void error(String msg, HttpRequest request) {
-    var logItem = ServerRequestLog(
+    final logItem = ServerRequestLog(
         logClass: LogMessageClass.error,
         statusCode: request.response.statusCode,
         requestUrl: request.uri.path,

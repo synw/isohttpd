@@ -1,7 +1,8 @@
-import 'dart:io';
 import 'dart:convert';
-import 'package:path/path.dart' as p;
+import 'dart:io';
+
 import 'package:body_parser/body_parser.dart';
+import 'package:path/path.dart' as p;
 
 Future<HttpResponse> jsonResponse(HttpRequest request, dynamic data) async {
   request.response.statusCode = HttpStatus.ok;
@@ -12,21 +13,21 @@ Future<HttpResponse> jsonResponse(HttpRequest request, dynamic data) async {
 }
 
 Future<BodyParseResult> decodeMultipartRequest(HttpRequest request) async =>
-    await parseBody(request);
+    parseBody(request);
 
 Future<Map<String, List<Map<String, dynamic>>>> directoryListing(
     Directory dir) async {
-  List contents = dir.listSync()..sort((a, b) => a.path.compareTo(b.path));
-  var dirs = <Map<String, String>>[];
-  var files = <Map<String, dynamic>>[];
-  for (var fileOrDir in contents) {
+  final contents = dir.listSync()..sort((a, b) => a.path.compareTo(b.path));
+  final dirs = <Map<String, String>>[];
+  final files = <Map<String, dynamic>>[];
+  for (final fileOrDir in contents) {
     if (fileOrDir is Directory) {
-      var dir = Directory("${fileOrDir.path}");
+      final dir = Directory("${fileOrDir.path}");
       dirs.add({
         "name": p.basename(dir.path),
       });
     } else {
-      var file = File("${fileOrDir.path}");
+      final file = File("${fileOrDir.path}");
       files.add(<String, dynamic>{
         "name": p.basename(file.path),
         "size": file.lengthSync()

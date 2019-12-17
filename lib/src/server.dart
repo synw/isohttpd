@@ -1,15 +1,17 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:isolate';
-import 'package:pedantic/pedantic.dart';
-import 'models/router.dart';
+
 import 'package:meta/meta.dart';
-import 'models/request_log.dart';
+import 'package:pedantic/pedantic.dart';
+
 import 'logger.dart';
+import 'models/request_log.dart';
+import 'models/router.dart';
+import 'models/server_log.dart';
 import 'models/types.dart';
 import 'request_logger.dart';
-import 'models/server_log.dart';
 
 class IsoHttpd {
   IsoHttpd(
@@ -55,8 +57,8 @@ class IsoHttpd {
   Stream<IsoServerLog> get logs => _logsChannel.stream;
   Stream<ServerRequestLog> get requestLogs => _requestsLogChannel.stream;
 
-  Future<Null> get onReady => _readyCompleter.future;
-  Future<Null> get onStarted => _onStartedCompleter.future;
+  Future<void> get onReady => _readyCompleter.future;
+  Future<void> get onStarted => _onStartedCompleter.future;
   bool get isRunning => _isRunning;
   ServerStatus get status => _status();
   HttpServer _server;
@@ -165,7 +167,7 @@ class IsoHttpd {
 
       // check if a route has been found
       if (handler == null) {
-        final msg = "Not found";
+        const msg = "Not found";
         _notFound(request, msg);
         return;
       }
@@ -203,8 +205,8 @@ class IsoHttpd {
     return s;
   }
 
-  void dispose() async {
-    _server?.close();
+  Future<void> dispose() async {
+    await _server?.close();
     _server = null;
     unawaited(_requestsLogChannel.close());
     unawaited(_logsChannel.close());

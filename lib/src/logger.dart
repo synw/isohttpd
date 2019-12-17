@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:isolate';
+
 import 'package:meta/meta.dart';
+
 import 'models/server_log.dart';
 
 class IsoLogger {
