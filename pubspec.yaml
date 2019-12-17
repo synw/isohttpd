@@ -16,3 +16,4 @@ dependencies:
   iso: ^0.3.0
   pedantic: ^1.8.0+1
   extra_pedantic: ^1.1.1+3
+  path: ^1.6.4
