@@ -101,9 +101,11 @@ class IsoHttpdRunner {
             isoRunner.send(ServerError.alreadyStarted);
           } else {
             await server.onReady;
-            await server
-                .start()
-                .catchError((dynamic e) => throw ("Can not start server $e"));
+            try {
+              await server.start();
+            } catch (_) {
+              rethrow;
+            }
             unawaited(server.onStarted
                 .then((_) => isoRunner.send(ServerStatus.started)));
           }
@@ -116,7 +118,7 @@ class IsoHttpdRunner {
               server.stop();
               isoRunner.send(ServerStatus.stopped);
             } catch (e) {
-              throw ("Can not stop server $e");
+              rethrow;
             }
           }
           break;
