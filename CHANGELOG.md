@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0
+
+- Fix socket close an dispose
+- Use more strict analysis options
+- Add docstrings
+
 ## 0.2.0
 
 - Use pedantic for analysis options
