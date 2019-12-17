@@ -7,8 +7,8 @@ Future<HttpResponse> handler(HttpRequest request, IsoLogger log) async {
 }
 
 void main() async {
-  IsoRoute onGet = IsoRoute(path: "*", handler: handler);
-  List<IsoRoute> routes = <IsoRoute>[onGet];
+  final onGet = IsoRoute(path: "*", handler: handler);
+  final routes = <IsoRoute>[onGet];
   final router = IsoRouter(routes);
   var server = IsoHttpd(host: "localhost", router: router);
   server.logs.listen((dynamic data) => print("LOG: $data"));

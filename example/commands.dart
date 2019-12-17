@@ -20,7 +20,7 @@ void main() async {
   final router = IsoRouter(routes);
 
   /// set host
-  String host = await initHost();
+  final host = await initHost();
 
   /// init runner
   final iso = IsoHttpdRunner(host: host, router: router);
@@ -32,12 +32,14 @@ void main() async {
   /// run
   print("Running the server in an isolate");
   await iso.run(startServer: false);
-  iso.status();
-  iso.start();
+  iso
+    ..status()
+    ..start();
   await iso.onServerStarted;
   iso.status();
   await Future<Null>.delayed(Duration(seconds: 3));
-  iso.stop();
-  iso.status();
+  iso
+    ..stop()
+    ..status();
   //iso.dispose();
 }
