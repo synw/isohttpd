@@ -1,19 +1,19 @@
 import 'dart:io';
+
 import 'package:isohttpd/isohttpd.dart';
+import 'package:pedantic/pedantic.dart';
 
-Future<HttpResponse> handler(HttpRequest request, IsoLogger log) async {
-  var response = jsonResponse(request, {"response": "ok"});
-  return response;
-}
+Future<HttpResponse> handler(HttpRequest request, IsoLogger log) =>
+    jsonResponse(request, {"response": "ok"});
 
-void main() async {
+Future<void> main() async {
   final onGet = IsoRoute(path: "*", handler: handler);
   final routes = <IsoRoute>[onGet];
   final router = IsoRouter(routes);
-  var server = IsoHttpd(host: "localhost", router: router);
+  final server = IsoHttpd(host: "localhost", router: router);
   server.logs.listen((dynamic data) => print("LOG: $data"));
   server.requestLogs.listen((dynamic data) => print("REQUEST LOG: $data"));
   server.init();
   await server.onReady;
-  server.start();
+  unawaited(server.start());
 }

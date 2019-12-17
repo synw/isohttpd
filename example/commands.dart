@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+
 import 'package:isohttpd/isohttpd.dart';
 
 Future<HttpResponse> handler(HttpRequest request, IsoLogger log) async {
@@ -13,7 +14,7 @@ Future<String> initHost() async {
   return interfaces.first.addresses.first.address;
 }
 
-void main() async {
+Future<void> main() async {
   /// set routes
   final defaultRoute = IsoRoute(path: "*", handler: handler);
   final routes = <IsoRoute>[defaultRoute];
@@ -37,7 +38,7 @@ void main() async {
     ..start();
   await iso.onServerStarted;
   iso.status();
-  await Future<Null>.delayed(Duration(seconds: 3));
+  await Future<void>.delayed(const Duration(seconds: 3));
   iso
     ..stop()
     ..status();
