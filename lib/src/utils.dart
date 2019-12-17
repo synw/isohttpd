@@ -15,6 +15,7 @@ Future<HttpResponse> jsonResponse(HttpRequest request, dynamic data) async {
 
 /// Decode post requests
 Future<BodyParseResult> decodeMultipartRequest(HttpRequest request) async =>
+    // ignore: deprecated_member_use
     parseBody(request);
 
 /// A convenience function to list a directory
