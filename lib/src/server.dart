@@ -141,7 +141,7 @@ class IsoHttpd {
     if (!_onStartedCompleter.isCompleted) {
       _onStartedCompleter.complete();
     }
-    log.info(IsoServerLog(message: "Server started"));
+    //log.info(IsoServerLog(message: "Server started"));
     _incomingRequestsSub = _incomingRequests.listen((request) {
       //log.debug("REQUEST ${request.uri.path} / ${request.headers.contentType}");
       // verify authorization
@@ -212,7 +212,6 @@ class IsoHttpd {
     if (_isRunning) {
       _incomingRequestsSub.cancel();
       _isRunning = false;
-      log.info(IsoServerLog(message: "Server stopped"));
       return true;
     }
     log.warning(IsoServerLog(message: "The server is not running"));

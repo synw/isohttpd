@@ -11,19 +11,28 @@ import 'models/state.dart';
 import 'server.dart';
 import 'types.dart';
 
+/// The runner class
 class IsoHttpdRunner {
+  /// Default constructor
   IsoHttpdRunner(
       {@required this.host,
       @required this.router,
       this.port = 8084,
-      this.apiKey,
-      this.verbose = false});
+      this.apiKey});
 
+  /// The host to serve from
   final String host;
+
+  /// The port
   int port;
+
+  /// The iso router
   final IsoRouter router;
+
+  /// an optional api key
   final String apiKey;
-  final bool verbose;
+
+  /// The main iso instance
   Iso iso;
 
   final _logsController = StreamController<IsoServerLog>.broadcast();
@@ -161,7 +170,7 @@ class IsoHttpdRunner {
               _addToLogs(IsoServerLog(
                   type: IsoLogType.info,
                   eventType: IsoServerEventType.startServer,
-                  message: "The server is started"));
+                  message: "Server started"));
             }
             break;
           case ServerStatus.stopped:
@@ -170,7 +179,7 @@ class IsoHttpdRunner {
             _addToLogs(IsoServerLog(
                 type: IsoLogType.info,
                 eventType: IsoServerEventType.stopServer,
-                message: "The server is stopped"));
+                message: "Server stopped"));
             break;
           case ServerStatus.ready:
             _ready.complete();
@@ -217,7 +226,9 @@ class IsoHttpdRunner {
       "verbose": verbose,
     };
     // run
-    print("ARGS $conf");
+    if (verbose) {
+      print("Iso runner whith config $conf");
+    }
     await iso.run(<dynamic>[conf]);
     await iso.onCanReceive;
   }
@@ -225,27 +236,21 @@ class IsoHttpdRunner {
   /// Kill the server
   void kill() {
     iso.dispose();
-    dispose();
+    _dispose();
   }
 
   /// Dispose streams
-  void dispose() {
+  void _dispose() {
     _dataOutSub.cancel();
     _requestLogsController.close();
     _logsController.close();
   }
 
   void _addToLogs(IsoServerLog data) {
-    if (verbose) {
-      print("$data");
-    }
     _logsController.sink.add(data);
   }
 
   void _addToRequestLogs(ServerRequestLog data) {
-    if (verbose) {
-      print("$data");
-    }
     _requestLogsController.sink.add(data);
   }
 }
