@@ -3,36 +3,36 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 
+import 'package:emodebug/emodebug.dart';
 import 'package:meta/meta.dart';
 import 'package:pedantic/pedantic.dart';
 
 import 'logger.dart';
 import 'models/request_log.dart';
 import 'models/router.dart';
-import 'models/server_log.dart';
 import 'request_logger.dart';
 import 'types.dart';
 
 /// The http server
-class IsoHttpd {
+class IsoHttpdServer {
   /// Provide a [host] and a [router]
-  IsoHttpd(
+  IsoHttpdServer(
       {@required this.host,
       @required this.router,
-      this.port = 8084,
+      @required this.chan,
+      //@required this.logSink,
+      //@required this.requestLogger,
       this.apiKey,
-      this.chan,
-      this.verbose = false})
+      this.port = 8084,
+      this.textDebug = false})
       : assert(host != null) {
-    switch (chan != null) {
-      case true:
-        log = IsoLogger(logChannel: _logsChannel, chan: chan, verbose: verbose);
-        requestLogger = IsoRequestLogger(
-            logChannel: _requestsLogChannel, chan: chan, verbose: verbose);
-        break;
-      default:
-        log = IsoLogger(logChannel: _logsChannel);
-        requestLogger = IsoRequestLogger(logChannel: _requestsLogChannel);
+    log = IsoLogger(chan: chan);
+    requestLogger =
+        IsoRequestLogger(logChannel: _requestsLogChannel, chan: chan);
+    if (!textDebug) {
+      _ = const EmoDebug();
+    } else {
+      _ = const EmoDebug(deactivateEmojis: true);
     }
   }
 
@@ -51,26 +51,28 @@ class IsoHttpd {
   /// The server api key
   final String apiKey;
 
-  /// Verbosity
-  final bool verbose;
+  /// Disable emojis in debug
+  final bool textDebug;
 
   /// The logger
   IsoLogger log;
 
   /// The requests logger
   IsoRequestLogger requestLogger;
+
   Stream<HttpRequest> _incomingRequests;
   bool _isRunning = false;
   bool _isInitialized = false;
   final _onStartedCompleter = Completer<void>();
   final _readyCompleter = Completer<void>();
   final _requestsLogChannel = StreamController<ServerRequestLog>.broadcast();
-  final _logsChannel = StreamController<IsoServerLog>.broadcast();
+  final _logsChannel = StreamController<String>.broadcast();
   StreamSubscription _incomingRequestsSub;
   HttpServer _server;
+  EmoDebug _;
 
   /// The logs stream
-  Stream<IsoServerLog> get logs => _logsChannel.stream;
+  Stream<String> get logs => _logsChannel.stream;
 
   /// The requests logs stream
   Stream<ServerRequestLog> get requestLogs => _requestsLogChannel.stream;
@@ -89,13 +91,13 @@ class IsoHttpd {
 
   /// Initialize the server
   void init() {
-    log.debug(IsoServerLog(message: "Initializing server at $host:$port"));
+    //log.push("Initializing server at $host:$port");
     HttpServer.bind(host, port).then((HttpServer s) {
       _server = s;
       _incomingRequests = s.asBroadcastStream();
       _isInitialized = true;
       _readyCompleter.complete();
-      log.info(IsoServerLog(message: "Server initialized at $host:$port"));
+      //log.push(_.init("Server initialized at $host:$port"));
     });
   }
 
@@ -121,8 +123,8 @@ class IsoHttpd {
           tokenString) {
         return false;
       }
-    } catch (_) {
-      log.error(IsoServerLog(message: "Can not get authorization header"));
+    } catch (e) {
+      log.push(_.notFound("Can not read authorization header"));
       return false;
     }
     return true;
@@ -131,9 +133,9 @@ class IsoHttpd {
   /// Start the server
   Future<void> start() async {
     assert(_isInitialized);
-    log.info(IsoServerLog(message: "Starting server"));
+    log.push(_.msg("Starting server"));
     if (_isRunning) {
-      log.warning(IsoServerLog(message: "The server is already running"));
+      log.push(_.warning("The server is already running"));
       return;
     }
     _isRunning = true;
@@ -141,14 +143,14 @@ class IsoHttpd {
     if (!_onStartedCompleter.isCompleted) {
       _onStartedCompleter.complete();
     }
-    //log.info(IsoServerLog(message: "Server started"));
+
     _incomingRequestsSub = _incomingRequests.listen((request) {
       //log.debug("REQUEST ${request.uri.path} / ${request.headers.contentType}");
       // verify authorization
       if (apiKey != null) {
         final authorized = verifyToken(request);
         if (!authorized) {
-          _unauthorized(request, "Incorrect token");
+          _unauthorized(request, "Unauthorized");
           return;
         }
       }
@@ -214,7 +216,7 @@ class IsoHttpd {
       _isRunning = false;
       return true;
     }
-    log.warning(IsoServerLog(message: "The server is not running"));
+    log.push(_.warning("The server is not running"));
     return false;
   }
 

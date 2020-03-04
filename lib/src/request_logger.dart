@@ -55,6 +55,6 @@ class IsoRequestLogger {
   void _processMsg(ServerRequestLog logItem) {
     //if (verbose) print(logItem);
     logChannel.sink.add(logItem);
-    if (chan != null) chan.send(logItem);
+    //if (chan != null) chan.send(logItem);
   }
 }

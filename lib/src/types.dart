@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'logger.dart';
@@ -63,16 +64,4 @@ enum IsoLogType {
 
   /// Error level
   error,
-}
-
-/// Server events
-enum IsoServerEventType {
-  /// Server initialization
-  initialization,
-
-  /// Server start
-  startServer,
-
-  /// Server stop
-  stopServer
 }

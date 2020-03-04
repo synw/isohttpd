@@ -3,22 +3,29 @@ import 'dart:async';
 import 'package:iso/iso.dart';
 import 'package:meta/meta.dart';
 import 'package:pedantic/pedantic.dart';
+import 'package:emodebug/emodebug.dart';
 
 import 'models/request_log.dart';
 import 'models/router.dart';
-import 'models/server_log.dart';
 import 'models/state.dart';
 import 'server.dart';
 import 'types.dart';
 
-/// The runner class
-class IsoHttpdRunner {
+/// The server runner class
+class IsoHttpd {
   /// Default constructor
-  IsoHttpdRunner(
+  IsoHttpd(
       {@required this.host,
       @required this.router,
+      this.apiKey,
       this.port = 8084,
-      this.apiKey});
+      this.textDebug = false}) {
+    if (!textDebug) {
+      _ = const EmoDebug();
+    } else {
+      _ = const EmoDebug(deactivateEmojis: true);
+    }
+  }
 
   /// The host to serve from
   final String host;
@@ -32,18 +39,22 @@ class IsoHttpdRunner {
   /// an optional api key
   final String apiKey;
 
+  /// Disable emojis in debug
+  final bool textDebug;
+
   /// The main iso instance
   Iso iso;
 
-  final _logsController = StreamController<IsoServerLog>.broadcast();
+  final _logsController = StreamController<String>.broadcast();
   final _requestLogsController = StreamController<ServerRequestLog>.broadcast();
   StreamSubscription<dynamic> _dataOutSub;
   var _serverStartedCompleter = Completer<void>();
   final _ready = Completer<void>();
   bool _isRunning;
+  EmoDebug _;
 
   /// Server logs stream
-  Stream<IsoServerLog> get logs => _logsController.stream;
+  Stream<String> get logs => _logsController.stream;
 
   /// Request logs stream
   Stream<ServerRequestLog> get requestLogs => _requestLogsController.stream;
@@ -59,22 +70,18 @@ class IsoHttpdRunner {
 
   static Future<void> _run(IsoRunner isoRunner) async {
     isoRunner.receive();
-    //iso.send("R IS > Running");
-
     // get config from args
-    IsoHttpd server;
+    IsoHttpdServer server;
     String _host;
     int _port;
     IsoRouter _router;
     String _apiKey;
     bool _startServer;
-    bool _verbose;
     final data = isoRunner.args[0] as Map<String, dynamic>;
     _host = data["host"] as String;
     _port = data["port"] as int;
     _router = data["router"] as IsoRouter;
     _startServer = data["start_server"] as bool;
-    _verbose = data["verbose"] as bool;
     if (data.containsKey("api_key") == true) {
       _apiKey = data["api_key"] as String;
     }
@@ -83,13 +90,12 @@ class IsoHttpdRunner {
       print("- Route ${r.path} / ${r.handler}");
     }*/
     // init server instance
-    server = IsoHttpd(
+    server = IsoHttpdServer(
         host: _host,
         port: _port,
         router: _router,
         apiKey: _apiKey,
-        chan: isoRunner.chanOut,
-        verbose: _verbose)
+        chan: isoRunner.chanOut)
       ..init();
     isoRunner.send(ServerStatus.ready);
     //print('R > server init completed');
@@ -150,7 +156,7 @@ class IsoHttpdRunner {
   void status() => iso.send(HttpdCommand.status);
 
   /// Run the server in an isolate
-  Future<void> run({bool startServer = true, bool verbose = false}) async {
+  Future<void> run({bool startServer = true}) async {
     assert(host != null);
     assert(router != null);
     iso = Iso(_run, onDataOut: (dynamic data) => null);
@@ -167,19 +173,13 @@ class IsoHttpdRunner {
             if (!_serverStartedCompleter.isCompleted) {
               _isRunning = true;
               _serverStartedCompleter.complete();
-              _addToLogs(IsoServerLog(
-                  type: IsoLogType.info,
-                  eventType: IsoServerEventType.startServer,
-                  message: "Server started"));
+              _addToLogs(_.start("Server started at $host:$port"));
             }
             break;
           case ServerStatus.stopped:
             _serverStartedCompleter = Completer<void>();
             _isRunning = false;
-            _addToLogs(IsoServerLog(
-                type: IsoLogType.info,
-                eventType: IsoServerEventType.stopServer,
-                message: "Server stopped"));
+            _addToLogs(_.stop("Server stopped"));
             break;
           case ServerStatus.ready:
             _ready.complete();
@@ -187,14 +187,11 @@ class IsoHttpdRunner {
       } else if (data is ServerError) {
         switch (data) {
           case ServerError.alreadyStarted:
-            _addToLogs(IsoServerLog(
-                type: IsoLogType.error,
-                message: "Error: the server is already started"));
+            _addToLogs(_.warning("The server is already started"));
             break;
           case ServerError.notRunning:
-            _addToLogs(IsoServerLog(
-                type: IsoLogType.error,
-                message: "Error: the server is not running"));
+            _addToLogs(_.warning("Error: the server is not running"));
+            break;
         }
       } else if (data is ServerState) {
         String status;
@@ -207,12 +204,10 @@ class IsoHttpdRunner {
             break;
           default:
         }
-        _addToLogs(IsoServerLog(
-            eventType: IsoServerEventType.initialization,
-            message: "Server status: $status"));
+        _addToLogs(_.msg("Server status: $status"));
       } else {
         //print("RUN > LOG DATA $data");
-        _addToLogs(IsoServerLog(message: "$data"));
+        _addToLogs("$data");
       }
     });
 
@@ -222,13 +217,9 @@ class IsoHttpdRunner {
       "port": port,
       "router": router,
       "api_key": apiKey,
-      "start_server": startServer,
-      "verbose": verbose,
+      "start_server": startServer
     };
     // run
-    if (verbose) {
-      print("Iso runner whith config $conf");
-    }
     await iso.run(<dynamic>[conf]);
     await iso.onCanReceive;
   }
@@ -246,11 +237,8 @@ class IsoHttpdRunner {
     _logsController.close();
   }
 
-  void _addToLogs(IsoServerLog data) {
-    _logsController.sink.add(data);
-  }
+  void _addToLogs(String msg) => _logsController.sink.add(msg);
 
-  void _addToRequestLogs(ServerRequestLog data) {
-    _requestLogsController.sink.add(data);
-  }
+  void _addToRequestLogs(ServerRequestLog data) =>
+      _requestLogsController.sink.add(data);
 }
