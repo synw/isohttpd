@@ -20,8 +20,6 @@ class IsoHttpdServer {
       {@required this.host,
       @required this.router,
       @required this.chan,
-      //@required this.logSink,
-      //@required this.requestLogger,
       this.apiKey,
       this.port = 8084,
       this.textDebug = false})
@@ -30,9 +28,9 @@ class IsoHttpdServer {
     requestLogger =
         IsoRequestLogger(logChannel: _requestsLogChannel, chan: chan);
     if (!textDebug) {
-      _ = const EmoDebug();
+      _ = const EmoDebug(deactivatePrint: true);
     } else {
-      _ = const EmoDebug(deactivateEmojis: true);
+      _ = const EmoDebug(deactivatePrint: true, deactivateEmojis: true);
     }
   }
 
@@ -91,13 +89,13 @@ class IsoHttpdServer {
 
   /// Initialize the server
   void init() {
-    //log.push("Initializing server at $host:$port");
+    log.push("Initializing server at $host:$port");
     HttpServer.bind(host, port).then((HttpServer s) {
       _server = s;
       _incomingRequests = s.asBroadcastStream();
       _isInitialized = true;
       _readyCompleter.complete();
-      //log.push(_.init("Server initialized at $host:$port"));
+      log.push(_.init("Server initialized at $host:$port"));
     });
   }
 
@@ -133,7 +131,7 @@ class IsoHttpdServer {
   /// Start the server
   Future<void> start() async {
     assert(_isInitialized);
-    log.push(_.msg("Starting server"));
+    log.push("Starting server");
     if (_isRunning) {
       log.push(_.warning("The server is already running"));
       return;

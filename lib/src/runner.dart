@@ -21,9 +21,9 @@ class IsoHttpd {
       this.port = 8084,
       this.textDebug = false}) {
     if (!textDebug) {
-      _ = const EmoDebug();
+      _ = const EmoDebug(deactivatePrint: true);
     } else {
-      _ = const EmoDebug(deactivateEmojis: true);
+      _ = const EmoDebug(deactivatePrint: true, deactivateEmojis: true);
     }
   }
 
@@ -163,10 +163,12 @@ class IsoHttpd {
 
     // logs relay
     _dataOutSub = iso.dataOut.listen((dynamic data) {
-      //print("DATA OUT $data");
+      //print("DATA OUT $data / ${data.runtimeType}");
       if (data is ServerRequestLog) {
         //print("RUN > REQUEST LOG DATA $data");
         _addToRequestLogs(data);
+      } else if (data is String) {
+        _addToLogs(data);
       } else if (data is ServerStatus) {
         switch (data) {
           case ServerStatus.started:
@@ -207,7 +209,7 @@ class IsoHttpd {
         _addToLogs(_.msg("Server status: $status"));
       } else {
         //print("RUN > LOG DATA $data");
-        _addToLogs("$data");
+        _addToLogs(_.msg("$data"));
       }
     });
 
