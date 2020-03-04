@@ -27,7 +27,7 @@ Future<void> main() async {
   final iso = IsoHttpd(host: host, router: router);
 
   /// listen to logs
-  iso.logs.listen((String msg) => print);
+  iso.logs.listen((String msg) => print("[server log] $msg"));
   iso.requestLogs.listen((ServerRequestLog data) => print("=> $data"));
 
   /// run
