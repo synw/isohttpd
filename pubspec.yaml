@@ -1,6 +1,6 @@
 name: isohttpd
 description: A lightweight http server that runs in an isolate. Router and logs are included.
-version: 0.3.0
+version: 0.4.0
 homepage: https://github.com/synw/isohttpd
 author: synw <ansterj@gmail.com>
 

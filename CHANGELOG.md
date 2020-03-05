@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.0
+
+Improve the logging
+
 ## 0.3.0
 
 - Fix socket close an dispose
