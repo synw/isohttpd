@@ -17,5 +17,4 @@ dependencies:
   body_parser: ^1.1.1
   iso: ^0.3.0
   path: ^1.6.4
-  emodebug:
-    path: ../emodebug
+  emodebug: ^0.4.0
