@@ -27,7 +27,7 @@ Future<void> main() async {
   final iso = IsoHttpd(host: host, router: router);
 
   /// listen to logs
-  iso.logs.listen((String msg) => print("[server log] $msg"));
+  iso.logs.listen((dynamic msg) => print("[server log] $msg"));
   iso.requestLogs.listen((ServerRequestLog data) => print("=> $data"));
 
   /// run
@@ -39,6 +39,7 @@ Future<void> main() async {
   await iso.onServerStarted;
   iso.status();
   await Future<void>.delayed(const Duration(seconds: 3));
+  print("Stopping the server");
   iso
     ..stop()
     ..status();
