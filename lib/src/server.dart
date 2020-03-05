@@ -64,13 +64,13 @@ class IsoHttpdServer {
   final _onStartedCompleter = Completer<void>();
   final _readyCompleter = Completer<void>();
   final _requestsLogChannel = StreamController<ServerRequestLog>.broadcast();
-  final _logsChannel = StreamController<String>.broadcast();
+  final _logsChannel = StreamController<dynamic>.broadcast();
   StreamSubscription _incomingRequestsSub;
   HttpServer _server;
   EmoDebug _;
 
   /// The logs stream
-  Stream<String> get logs => _logsChannel.stream;
+  Stream<dynamic> get logs => _logsChannel.stream;
 
   /// The requests logs stream
   Stream<ServerRequestLog> get requestLogs => _requestsLogChannel.stream;

@@ -10,11 +10,6 @@ class IsoLogger {
   /// The port to use
   final SendPort chan;
 
-  /// Push a message to the debug channel
-  void push(String msg) => _processMsg(msg);
-
-  void _processMsg(String msg) {
-    //print("SENDING MSG $msg");
-    chan.send(msg);
-  }
+  /// Push something to the logs
+  void push(dynamic obj) => chan.send(obj);
 }

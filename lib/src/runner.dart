@@ -45,7 +45,7 @@ class IsoHttpd {
   /// The main iso instance
   Iso iso;
 
-  final _logsController = StreamController<String>.broadcast();
+  final _logsController = StreamController<dynamic>.broadcast();
   final _requestLogsController = StreamController<ServerRequestLog>.broadcast();
   StreamSubscription<dynamic> _dataOutSub;
   var _serverStartedCompleter = Completer<void>();
@@ -54,7 +54,7 @@ class IsoHttpd {
   EmoDebug _;
 
   /// Server logs stream
-  Stream<String> get logs => _logsController.stream;
+  Stream<dynamic> get logs => _logsController.stream;
 
   /// Request logs stream
   Stream<ServerRequestLog> get requestLogs => _requestLogsController.stream;
@@ -141,9 +141,6 @@ class IsoHttpd {
           isoRunner.send(ServerState(server.status));
       }
     });
-    //print("R print > Runner is running");
-    //iso.send("R IS > Runner is running");
-    //iso.receive();
   }
 
   /// Start the server command
@@ -209,7 +206,7 @@ class IsoHttpd {
         _addToLogs(_.msg("Server status: $status"));
       } else {
         //print("RUN > LOG DATA $data");
-        _addToLogs(_.msg("$data"));
+        _addToLogs(data);
       }
     });
 
@@ -239,7 +236,7 @@ class IsoHttpd {
     _logsController.close();
   }
 
-  void _addToLogs(String msg) => _logsController.sink.add(msg);
+  void _addToLogs(dynamic obj) => _logsController.sink.add(obj);
 
   void _addToRequestLogs(ServerRequestLog data) =>
       _requestLogsController.sink.add(data);
